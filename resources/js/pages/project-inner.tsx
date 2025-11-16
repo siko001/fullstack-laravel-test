@@ -179,23 +179,22 @@ Please enter the following:
     const roomDescription = prompt('Room description (optional):');
     const roomPurpose = prompt('Room purpose (e.g., Kitchen, Bathroom, Living Room):');
     
-    // Create new room as a container for groups (don't merge lines)
+    // Create new room as a container for groups
     const roomId = `room_${Date.now()}`;
-    const newRoom = {
-      name: roomName.trim(),
-      description: roomDescription?.trim() || '',
-      purpose: roomPurpose?.trim() || '',
-      lines: [], // Room doesn't have its own lines
-      stoneType: roomStoneType,
-      createdAt: new Date().toISOString(),
-      type: 'room', // Mark as room type
-      childGroups: selectedGroups // Store groups that belong to this room
+    const updatedGroups = {
+      ...groups,
+      [roomId]: {
+        name: roomName.trim(),
+        purpose: roomPurpose || '',
+        description: roomDescription || '',
+        stoneType: roomStoneType || '',
+        lines: Array.from(allLines), // Include all lines from child groups
+        type: 'room',
+        childGroups: selectedGroups, // Store the groups that make up this room
+        createdAt: new Date().toISOString(),
+        sourceGroups: selectedGroups
+      }
     };
-    
-    // Save to localStorage immediately
-    const updatedGroups = { ...groups };
-    // Add new room (don't remove original groups)
-    updatedGroups[roomId] = newRoom;
     
     // Update state
     setGroups(updatedGroups);
@@ -207,14 +206,30 @@ Please enter the following:
   };
   
   const selectGroup = (groupId: string) => {
-    // Toggle group selection for multi-selection
+    const group = groups[groupId];
+    if (!group) return;
+    
     if (selectedGroups.includes(groupId)) {
-      // Deselect the group from multi-selection
+      // Deselect if already selected
       setSelectedGroups(selectedGroups.filter(id => id !== groupId));
       
       // Revert lines back to default
-      const group = groups[groupId];
-      if (group) {
+      if (group.type === 'room' && group.childGroups) {
+        // For rooms, revert all lines from all child groups
+        group.childGroups.forEach(childGroupId => {
+          const childGroup = groups[childGroupId];
+          if (childGroup) {
+            childGroup.lines.forEach(lineId => {
+              const line = document?.getElementById(lineId)?.nextSibling;
+              if (line) {
+                line.style.stroke = 'black';
+                line.style.strokeWidth = '8px';
+              }
+            });
+          }
+        });
+      } else {
+        // For regular groups, revert only group lines
         group.lines.forEach(lineId => {
           const line = document?.getElementById(lineId)?.nextSibling;
           if (line) {
@@ -233,9 +248,27 @@ Please enter the following:
       // Add to multi-selection
       setSelectedGroups([...selectedGroups, groupId]);
       
-      // Apply orange color to selected group lines
-      const group = groups[groupId];
-      if (group) {
+      if (group.type === 'room' && group.childGroups) {
+        // For rooms, select all lines from all child groups
+        const allLines: string[] = [];
+        group.childGroups.forEach(childGroupId => {
+          const childGroup = groups[childGroupId];
+          if (childGroup) {
+            allLines.push(...childGroup.lines);
+            // Apply orange color to child group lines
+            childGroup.lines.forEach(lineId => {
+              const line = document?.getElementById(lineId)?.nextSibling;
+              if (line) {
+                line.style.stroke = 'orange';
+                line.style.strokeWidth = '15px';
+              }
+            });
+          }
+        });
+        // Also update selectedLines to include all lines from the room
+        setSelectedLines(prev => [...new Set([...prev, ...allLines])]);
+      } else {
+        // For regular groups, apply orange color to group lines
         group.lines.forEach(lineId => {
           const line = document?.getElementById(lineId)?.nextSibling;
           if (line) {
