@@ -28,9 +28,12 @@ Route::get('/', function () {
        }
        else
        {
-        // show project
+        // get the current url
+        $url = request()->url();
+        
           return Inertia::render('project-inner', [
                'project' => $project,
+               'url' => $url,
            ]);
        }
     }
@@ -54,8 +57,17 @@ Route::post('/projects', function () {
 
 // Show Project
 Route::get('/projects/{project}', function (Project $project) {
+    $url = request()->url();
+      if(!$project->svg_path)
+       {
+        // upload plan
+          return Inertia::render('project-inner-plan', [
+               'project' => $project,
+           ]);
+       }
     return Inertia::render('project-inner', [
         'project' => $project,
+        'url' => $url,
     ]);
 })->name('project.show');
 

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import ProjectDetailCard from '@/components/project-detail-card';
 
-
 export default function ProjectInner({ project }: { project: any }) {
     const [libredwg, setLibredwg] = useState(null);
     const [svgContent, setSvgContent] = useState(null);

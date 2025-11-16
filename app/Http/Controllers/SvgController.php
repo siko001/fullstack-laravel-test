@@ -34,7 +34,6 @@ class SvgController extends Controller
             $project->svg_path = $filename;
             $project->save();
           
-            // Return JSON response with redirect URL
             return response()->json([
                 'message' => 'SVG saved successfully!',
                 'redirect_url' => route('project.show', $project->id)
