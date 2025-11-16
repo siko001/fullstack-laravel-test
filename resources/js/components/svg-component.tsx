@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { setupHitwalls, keyHandler } from '@/lib/setup-hitwalls';
-export default function SvgComponent({ setTooltipText, tooltipRef, setSelectedId,loading, svgContent, svgContainerRef, project, setLoading , setSvgContent }: { svgContent: string, svgContainerRef: React.RefObject<HTMLDivElement>, project: any, setLoading: (loading: boolean) => void, setSvgContent: (svgContent: string) => void, tooltipRef: React.RefObject<HTMLDivElement | null> }) {
+export default function SvgComponent({ setTooltipText, tooltipRef, setSelectedId, selectLine, loading, svgContent, svgContainerRef, project, setLoading , setSvgContent }: { svgContent: string, svgContainerRef: React.RefObject<HTMLDivElement>, project: any, setLoading: (loading: boolean) => void, setSvgContent: (svgContent: string) => void, tooltipRef: React.RefObject<HTMLDivElement | null>, selectLine: (id: string) => void }) {
   const handlersRef = useRef<{ enter: (e: MouseEvent) => void; move: (e: MouseEvent) => void; leave: (e: MouseEvent) => void; click: (e: MouseEvent) => void } | null>(null);
   
     // Load SVG
@@ -55,7 +55,10 @@ export default function SvgComponent({ setTooltipText, tooltipRef, setSelectedId
         const handleClick = (event: MouseEvent) => {
           const target = event.target as HTMLElement;
           const id = target.closest('g')?.id;
-          setSelectedId(id);
+          console.log('SvgComponent handleClick called with id:', id);
+          if (selectLine && id) {
+            selectLine(id);
+          }
         };
     
         handlersRef.current = {
@@ -81,7 +84,9 @@ export default function SvgComponent({ setTooltipText, tooltipRef, setSelectedId
           const lines = svgElement.querySelectorAll('line');
           const handlers = handlersRef.current;
     
-          lines.forEach(line => {
+          console.log('Attaching event handlers to', lines.length, 'lines');
+          lines.forEach((line, index) => {
+            console.log(`Attaching handlers to line ${index}:`, line);
             line.addEventListener('mouseenter', handlers.enter);
             line.addEventListener('mousemove', handlers.move);
             line.addEventListener('click', handlers.click);
