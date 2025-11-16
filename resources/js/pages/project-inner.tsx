@@ -15,6 +15,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   const [currentGroup, setCurrentGroup] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+   const [tooltipMode, setTooltipMode] = useState<'group' | 'room'>('group');
   
   // Load groups from localStorage on component mount
   useEffect(() => {
@@ -447,7 +448,7 @@ Please enter the following:
         {selectedToolTip}
       </div>
     
-
+     {tooltipMode !== 'room' &&
       <div className="fixed top-4 right-4  p-4 rounded shadow-lg border max-w-xs">
         <h3 className="font-semibold mb-2">Group Info</h3>
         <div className="text-sm space-y-1">
@@ -473,42 +474,36 @@ Please enter the following:
           </button>
         )}
         
-        {/* Display all groups */}
-        {Object.keys(groups).length > 0 && (
+        {/* Display all groups (excluding rooms) */}
+        {Object.keys(groups).filter(id => groups[id].type !== 'room').length > 0 && (
           <div className="mt-3 pt-3 border-t">
             <div className="text-xs font-semibold mb-2">Saved Groups:</div>
             <div className="max-h-32 overflow-y-auto space-y-1">
-              {Object.entries(groups).map(([groupId, group]) => (
-                <div 
-                  key={groupId} 
-                  className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-700 px-1 rounded ${
-                    selectedGroups.includes(groupId) ? 'bg-orange-100 border border-orange-300' : 
-                    selectedGroup === groupId ? 'bg-yellow-100 border border-yellow-300' : ''
-                  }`}
-                  onClick={() => selectGroup(groupId)}
-                >
-                  <div className="flex-1">
-                    <span className="truncate">{group.name}</span>
-                    {group.type === 'room' && (
-                      <span className="text-purple-600 ml-1 text-xs">🏠</span>
-                    )}
-                    {group.purpose && (
-                      <div className="text-xs text-gray-500">{group.purpose}</div>
-                    )}
-                    {group.type === 'room' && group.childGroups && group.childGroups.length > 0 && (
-                      <div className="text-xs text-purple-500">
-                        {group.childGroups.length} groups
-                      </div>
-                    )}
+              {Object.entries(groups)
+                .filter(([_, group]) => group.type !== 'room')
+                .map(([groupId, group]) => (
+                  <div 
+                    key={groupId} 
+                    className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-700 px-1 rounded ${
+                      selectedGroups.includes(groupId) ? 'bg-orange-100 border border-orange-300' : 
+                      selectedGroup === groupId ? 'bg-yellow-100 border border-yellow-300' : ''
+                    }`}
+                    onClick={() => selectGroup(groupId)}
+                  >
+                    <div className="flex-1">
+                      <span className="truncate">{group.name}</span>
+                      {group.purpose && (
+                        <div className="text-xs text-gray-500">{group.purpose}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500">({group.lines.length})</span>
+                      {selectedGroups.includes(groupId) && (
+                        <span className="text-orange-600 ml-1">✓</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-500">({group.lines.length})</span>
-                    {selectedGroups.includes(groupId) && (
-                      <span className="text-orange-600 ml-1">✓</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
@@ -537,162 +532,386 @@ Please enter the following:
           </button>
         )}
       </div>
+}
       <div className="fixed bottom-4 right-4 p-3 rounded shadow-lg border max-w-xs">
-        <div className="text-sm font-semibold mb-1">Group Tooltip</div>
-        
-        {/* Show Create Room option when multiple groups selected */}
-        {selectedGroups.length >= 2 && (
-          <div className="space-y-2">
-            <div className="text-xs text-gray-600">
-              {selectedGroups.length} groups selected for room creation
-            </div>
+        <div className="flex justify-between flex-col  mb-2">
+          <div className="text-sm font-semibold">
+            {tooltipMode === 'group' ? 'Group Info' : 'Room Info'}
+          </div>
+          <div className="flex gap-1">
             <button
-              onClick={createRoom}
-              className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+              onClick={() => setTooltipMode('group')}
+              className={`px-2 py-1 text-xs rounded ${
+                tooltipMode === 'group' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
             >
-              Create Room ({selectedGroups.length} groups)
+              Group Info
+            </button>
+            <button
+              onClick={() => setTooltipMode('room')}
+              className={`px-2 py-1 text-xs rounded ${
+                tooltipMode === 'room' 
+                  ? 'bg-purple-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Room Info
             </button>
           </div>
-        )}
+        </div>
         
-        {/* Show single group details when one group selected */}
-        {selectedGroup && selectedGroups.length <= 1 && (
-          <div className="space-y-2">
-            <div className="text-xs text-gray-600">
-              Selected Group: {groups[selectedGroup]?.name}
-            </div>
-            <div className="text-xs text-gray-600 space-y-1">
-              Lines:
-              {groups[selectedGroup]?.lines.map(lineId => (
-                <div key={lineId} className="flex justify-between items-center">
-                  <span>{lineId}</span>
-                  <button
-                    onClick={() => {
-                      const updatedGroup = {
-                        ...groups[selectedGroup],
-                        lines: groups[selectedGroup].lines.filter(id => id !== lineId)
-                      };
-                      setGroups(prev => ({
-                        ...prev,
-                        [selectedGroup]: updatedGroup
-                      }));
-                      // Revert the line back to default
-                      const line = document?.getElementById(lineId)?.nextSibling;
-                      if (line) {
-                        line.style.stroke = 'black';
-                        line.style.strokeWidth = '8px';
-                      }
-                    }}
-                    className="text-red-500 hover:text-red-700 text-xs px-1"
-                  >
-                    x
-                  </button>
+        {/* Conditional content based on tooltip mode */}
+        {tooltipMode === 'group' ? (
+          <div>
+            {/* Show Create Room option when multiple groups selected */}
+            {selectedGroups.length >= 2 && (
+              <div className="space-y-2">
+                <div className="text-xs text-gray-600">
+                  {selectedGroups.length} groups selected for room creation
                 </div>
-              ))}
-            </div>
-            <button
-              onClick={() => {
-                // Get other groups that can be merged
-                const otherGroups = Object.entries(groups).filter(([id]) => id !== selectedGroup);
-                
-                if (otherGroups.length === 0) {
-                  alert('No other groups available to merge with.');
-                  return;
-                }
-                
-                // Create a simple selection interface
-                const groupOptions = otherGroups.map(([id, group], index) => 
-                  `${index + 1}. ${group.name} (${group.lines.length} lines)`
-                ).join('\n');
-                
-                const choice = prompt(`Select a group to merge with:\n\n${groupOptions}\n\nEnter the number (1-${otherGroups.length}):`);
-                
-                if (choice && !isNaN(Number(choice))) {
-                  const selectedIndex = Number(choice) - 1;
-                  if (selectedIndex >= 0 && selectedIndex < otherGroups.length) {
-                    const [targetGroupId, targetGroup] = otherGroups[selectedIndex];
+                <button
+                  onClick={createRoom}
+                  className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                >
+                  Create Room ({selectedGroups.length} groups)
+                </button>
+              </div>
+            )}
+            
+            {/* Show single group details when one group selected */}
+            {selectedGroup && selectedGroups.length <= 1 && (
+              <div className="space-y-2">
+                <div className="text-xs text-gray-600">
+                  Selected Group: {groups[selectedGroup]?.name}
+                </div>
+                <div className="text-xs text-gray-600 space-y-1">
+                  Lines:
+                  {groups[selectedGroup]?.lines.map(lineId => (
+                    <div key={lineId} className="flex justify-between items-center">
+                      <span>{lineId}</span>
+                      <button
+                        onClick={() => {
+                          const updatedGroup = {
+                            ...groups[selectedGroup],
+                            lines: groups[selectedGroup].lines.filter(id => id !== lineId)
+                          };
+                          setGroups(prev => ({
+                            ...prev,
+                            [selectedGroup]: updatedGroup
+                          }));
+                          // Revert the line back to default
+                          const line = document?.getElementById(lineId)?.nextSibling;
+                          if (line) {
+                            line.style.stroke = 'black';
+                            line.style.strokeWidth = '8px';
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 text-xs px-1"
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    // Get other groups that can be merged
+                    const otherGroups = Object.entries(groups).filter(([id]) => id !== selectedGroup);
                     
-                    if (confirm(`Merge "${groups[selectedGroup].name}" into "${targetGroup.name}"?`)) {
-                      // Merge the groups
-                      const mergedLines = [...new Set([...targetGroup.lines, ...groups[selectedGroup].lines])];
-                      
-                      // Update the target group with merged lines
-                      setGroups(prev => ({
-                        ...prev,
-                        [targetGroupId]: {
-                          ...prev[targetGroupId],
-                          lines: mergedLines
+                    if (otherGroups.length === 0) {
+                      alert('No other groups available to merge with.');
+                      return;
+                    }
+                    
+                    // Create a simple selection interface
+                    const groupOptions = otherGroups.map(([id, group], index) => 
+                      `${index + 1}. ${group.name} (${group.lines.length} lines)`
+                    ).join('\n');
+                    
+                    const choice = prompt(`Select a group to merge with:\n\n${groupOptions}\n\nEnter the number (1-${otherGroups.length}):`);
+                    
+                    if (choice && !isNaN(Number(choice))) {
+                      const selectedIndex = Number(choice) - 1;
+                      if (selectedIndex >= 0 && selectedIndex < otherGroups.length) {
+                        const [targetGroupId, targetGroup] = otherGroups[selectedIndex];
+                        
+                        if (confirm(`Merge "${groups[selectedGroup].name}" into "${targetGroup.name}"?`)) {
+                          // Merge the groups
+                          const mergedLines = [...new Set([...targetGroup.lines, ...groups[selectedGroup].lines])];
+                          
+                          // Update the target group with merged lines
+                          setGroups(prev => ({
+                            ...prev,
+                            [targetGroupId]: {
+                              ...prev[targetGroupId],
+                              lines: mergedLines
+                            }
+                          }));
+                          
+                          // Remove the current group
+                          setGroups(prev => {
+                            const newGroups = { ...prev };
+                            delete newGroups[selectedGroup];
+                            return newGroups;
+                          });
+                          
+                          // Select the merged group
+                          setSelectedGroup(targetGroupId);
+                          setSelectedGroups([targetGroupId]);
+                          
+                          // Apply visual styling to merged group
+                          mergedLines.forEach(lineId => {
+                            const line = document?.getElementById(lineId)?.nextSibling;
+                            if (line) {
+                              line.style.stroke = 'red';
+                              line.style.strokeWidth = '15px';
+                            }
+                          });
                         }
-                      }));
+                      }
+                    }
+                  }}
+                  className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                >
+                  Merge Groups
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to delete this group?')) {
+                      // Revert all lines in this group back to default
+                      const group = groups[selectedGroup];
+                      if (group) {
+                        group.lines.forEach(lineId => {
+                          const line = document?.getElementById(lineId)?.nextSibling;
+                          if (line) {
+                            line.style.stroke = 'black';
+                            line.style.strokeWidth = '8px';
+                          }
+                        });
+                      }
                       
-                      // Remove the current group
+                      // Remove the group from state
                       setGroups(prev => {
                         const newGroups = { ...prev };
                         delete newGroups[selectedGroup];
                         return newGroups;
                       });
-                      
-                      // Select the merged group
-                      setSelectedGroup(targetGroupId);
-                      setSelectedGroups([targetGroupId]);
-                      
-                      // Apply visual styling to merged group
-                      mergedLines.forEach(lineId => {
-                        const line = document?.getElementById(lineId)?.nextSibling;
-                        if (line) {
-                          line.style.stroke = 'red';
-                          line.style.strokeWidth = '15px';
-                        }
-                      });
+                      setSelectedGroup(null);
                     }
-                  }
+                  }}
+                  className="w-full bg-red-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                >
+                  Delete Group
+                </button>
+              </div>
+            )}
+            
+            {/* Show line selection info when no groups selected */}
+            {!selectedGroup && selectedGroups.length === 0 && (
+              <div className="text-xs text-gray-600">
+                {selectedLines.length > 0
+                  ? `Selected: ${selectedLines.join(', ')}`
+                  : 'Click lines to select multiple'
                 }
-              }}
-              className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
-            >
-              Merge Groups
-            </button>
-            <button
-              onClick={() => {
-                if (confirm('Are you sure you want to delete this group?')) {
-                  // Revert all lines in this group back to default
-                  const group = groups[selectedGroup];
-                  if (group) {
-                    group.lines.forEach(lineId => {
-                      const line = document?.getElementById(lineId)?.nextSibling;
-                      if (line) {
-                        line.style.stroke = 'black';
-                        line.style.strokeWidth = '8px';
-                      }
-                    });
-                  }
-                  
-                  // Remove the group from state
-                  setGroups(prev => {
-                    const newGroups = { ...prev };
-                    delete newGroups[selectedGroup];
-                    return newGroups;
-                  });
-                  setSelectedGroup(null);
-                }
-              }}
-              className="w-full bg-red-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-            >
-              Delete Group
-            </button>
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Show line selection info when no groups selected */}
-        {!selectedGroup && selectedGroups.length === 0 && (
-          <div className="text-xs text-gray-600">
-            {selectedLines.length > 0
-              ? `Selected: ${selectedLines.join(', ')}`
-              : 'Click lines to select multiple'
-            }
+        ) : (
+          /* Room Info content */
+          <div>
+            <div className="text-xs text-gray-600 space-y-1">
+              <div>Total Rooms: {Object.keys(groups).filter(id => groups[id].type === 'room').length}</div>
+              {selectedGroups.filter(id => groups[id].type === 'room').length > 0 && (
+                <div className="text-purple-600 font-semibold">
+                  Selected Rooms: {selectedGroups.filter(id => groups[id].type === 'room').length}
+                </div>
+              )}
+            </div>
+            
+            {/* Display all rooms */}
+            {Object.keys(groups).filter(id => groups[id].type === 'room').length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-xs font-semibold mb-2">Available Rooms:</div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {Object.entries(groups)
+                    .filter(([_, group]) => group.type === 'room')
+                    .map(([roomId, room]) => (
+                      <div
+                        key={roomId}
+                        className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-100 px-1 rounded ${
+                          selectedGroups.includes(roomId) ? 'bg-purple-100 border border-purple-300' :
+                          selectedGroup === roomId ? 'bg-purple-100 border border-purple-300' : ''
+                        }`}
+                        onClick={() => selectGroup(roomId)}
+                      >
+                        <div className="flex-1">
+                          <span className="truncate">{room.name}</span>
+                          <span className="text-purple-600 ml-1 text-xs">🏠</span>
+                          {room.purpose && (
+                            <div className="text-xs text-gray-500">{room.purpose}</div>
+                          )}
+                          {room.childGroups && room.childGroups.length > 0 && (
+                            <div className="text-xs text-purple-500">
+                              {room.childGroups.length} groups
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-gray-500">({room.lines.length} lines)</span>
+                          {selectedGroups.includes(roomId) && (
+                            <span className="text-purple-600 ml-1">✓</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Room details when selected */}
+            {selectedGroup && groups[selectedGroup]?.type === 'room' && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-xs font-semibold mb-2">Room Details:</div>
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600">
+                    <strong>Name:</strong> {groups[selectedGroup].name}
+                  </div>
+                  {groups[selectedGroup].purpose && (
+                    <div className="text-xs text-gray-600">
+                      <strong>Purpose:</strong> {groups[selectedGroup].purpose}
+                    </div>
+                  )}
+                  {groups[selectedGroup].description && (
+                    <div className="text-xs text-gray-600">
+                      <strong>Description:</strong> {groups[selectedGroup].description}
+                    </div>
+                  )}
+                  {groups[selectedGroup].stoneType && (
+                    <div className="text-xs text-gray-600">
+                      <strong>Stone Type:</strong> {groups[selectedGroup].stoneType}
+                    </div>
+                  )}
+                  {groups[selectedGroup].childGroups && groups[selectedGroup].childGroups.length > 0 && (
+                    <div className="text-xs text-gray-600">
+                      <strong>Contains Groups:</strong>
+                      <div className="ml-2 mt-1">
+                        {groups[selectedGroup].childGroups.map(groupId => (
+                          <div key={groupId} className="text-xs">
+                            • {groups[groupId]?.name || 'Unknown Group'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Show message when no rooms exist */}
+            {Object.keys(groups).filter(id => groups[id].type === 'room').length === 0 && (
+              <div className="text-xs text-gray-500 text-center py-2">
+                No rooms created yet. Select multiple groups and create a room.
+              </div>
+            )}
           </div>
         )}
       </div>
+      
+      {/* if tooltipMode === 'room' */}
+      {tooltipMode === 'room' && Object.keys(groups).filter(id => groups[id].type === 'room').length > 0 && (
+        <div className="fixed top-4 right-4 p-4 rounded shadow-lg border max-w-xs">
+          <h3 className="font-semibold mb-2 text-purple-600">Room Info</h3>
+          <div className="text-sm space-y-1">
+            <div>Total Rooms: {Object.keys(groups).filter(id => groups[id].type === 'room').length}</div>
+            {selectedGroups.filter(id => groups[id].type === 'room').length > 0 && (
+              <div className="text-purple-600 font-semibold">
+                Selected Rooms: {selectedGroups.filter(id => groups[id].type === 'room').length}
+              </div>
+            )}
+          </div>
+          
+          {/* Display all rooms */}
+          <div className="mt-3 pt-3 border-t">
+            <div className="text-xs font-semibold mb-2">Available Rooms:</div>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {Object.entries(groups)
+                .filter(([_, group]) => group.type === 'room')
+                .map(([roomId, room]) => (
+                  <div 
+                    key={roomId} 
+                    className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-100 px-1 rounded ${
+                      selectedGroups.includes(roomId) ? 'bg-purple-100 border border-purple-300' : 
+                      selectedGroup === roomId ? 'bg-purple-100 border border-purple-300' : ''
+                    }`}
+                    onClick={() => selectGroup(roomId)}
+                  >
+                    <div className="flex-1">
+                      <span className="truncate">{room.name}</span>
+                      <span className="text-purple-600 ml-1 text-xs">🏠</span>
+                      {room.purpose && (
+                        <div className="text-xs text-gray-500">{room.purpose}</div>
+                      )}
+                      {room.childGroups && room.childGroups.length > 0 && (
+                        <div className="text-xs text-purple-500">
+                          {room.childGroups.length} groups
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500">({room.lines.length} lines)</span>
+                      {selectedGroups.includes(roomId) && (
+                        <span className="text-purple-600 ml-1">✓</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+          
+      
+          
+          {/* Room details when selected */}
+          {selectedGroup && groups[selectedGroup]?.type === 'room' && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="text-xs font-semibold mb-2">Room Details:</div>
+              <div className="space-y-1">
+                <div className="text-xs text-gray-600">
+                  <strong>Name:</strong> {groups[selectedGroup].name}
+                </div>
+                {groups[selectedGroup].purpose && (
+                  <div className="text-xs text-gray-600">
+                    <strong>Purpose:</strong> {groups[selectedGroup].purpose}
+                  </div>
+                )}
+                {groups[selectedGroup].description && (
+                  <div className="text-xs text-gray-600">
+                    <strong>Description:</strong> {groups[selectedGroup].description}
+                  </div>
+                )}
+                {groups[selectedGroup].stoneType && (
+                  <div className="text-xs text-gray-600">
+                    <strong>Stone Type:</strong> {groups[selectedGroup].stoneType}
+                  </div>
+                )}
+                {groups[selectedGroup].childGroups && groups[selectedGroup].childGroups.length > 0 && (
+                  <div className="text-xs text-gray-600">
+                    <strong>Contains Groups:</strong>
+                    <div className="ml-2 mt-1">
+                      {groups[selectedGroup].childGroups.map(groupId => (
+                        <div key={groupId} className="text-xs">
+                          • {groups[groupId]?.name || 'Unknown Group'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
