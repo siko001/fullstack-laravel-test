@@ -6,7 +6,10 @@ import SvgComponent from '@/components/svg-component';
 export default function ProjectInner({ project, url }: { project: any, url: string }) {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [previousIds, setPreviousIds] = useState<string | null>([]);
+  
   const [tooltipText, setTooltipText] = useState<string | null>(null);
   const [selectedToolTip, setSelectedTooltipText] = useState<string | null>(null);
   
@@ -15,39 +18,47 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
     const svgContainerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const persistantTooltipRef = useRef<HTMLDivElement>(null);
-    
-    const highlightLine = (id: string) => {
-        const svg = svgContainerRef.current?.querySelector('svg');
-        const line = svg.getElementById(id).nextElementSibling;
-        line.style.stroke = 'blue';
+
+  const selectLine = (id: string) => {
+    setSelectedId(id);
+    setSelectedTooltipText(id);
+    if (persistantTooltipRef.current) {
+        persistantTooltipRef.current.style.display = 'inline-block';
+        persistantTooltipRef.current.style.position = 'fixed';
+        persistantTooltipRef.current.style.left = `${event.clientX + 15}px`;
+        persistantTooltipRef.current.style.top = `${event.clientY + 15}px`;
+    }
+  };
+  
+  const highlightLine = (id: string) => {
+    const line = document?.getElementById(id)?.nextSibling;
+        line.style.stroke = 'red';
         line.style.strokeWidth = '20px';
+        setPreviousIds([...previousIds, id]);
+  };
+  
+  
+  const unhighlightLine = (id: string) => {
+    const line = document?.getElementById(id)?.nextSibling;
+    if (line) {
+      line.style.stroke = 'black';
+      line.style.strokeWidth = '8px';
     }
-    
-    const unhighlightLine = (id: string) => {
-        const svg = svgContainerRef.current?.querySelector('svg');
-        const line = svg.getElementById(id).nextElementSibling;
-        line.style.stroke = 'black';
-        line.style.strokeWidth = '8px';
-    }
-
-    const selectLine = (id: string) => {
-        setSelectedTooltipText(id);     
-        if (persistantTooltipRef.current) {
-            persistantTooltipRef.current.style.display = 'inline-block';
-            persistantTooltipRef.current.style.position = 'fixed';
-            persistantTooltipRef.current.style.left = `${event.clientX + 15}px`;
-            persistantTooltipRef.current.style.top = `${event.clientY + 15}px`;
-        }
-        highlightLine(id);
-    };
-
-    
+  };
   
     useEffect(() => {
-        console.log(selectedId);
+    if (!selectedId) return;
+    previousIds.forEach(id => {
+        if (id !== selectedId) unhighlightLine(id);
+    });
+
+    highlightLine(selectedId);
+    if (previousIds.length !== 1 || previousIds[0] !== selectedId) {
+        setPreviousIds([selectedId]);
+    }
     }, [selectedId]);
-  
-  
+
+
 
   
   
