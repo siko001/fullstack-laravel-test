@@ -14,6 +14,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   const [groupNames, setGroupNames] = useState<{[key: string]: string}>({});
   const [currentGroup, setCurrentGroup] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   
   // Load groups from localStorage on component mount
   useEffect(() => {
@@ -39,7 +40,22 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
           setGroups(convertedGroups);
           localStorage.setItem('lineGroups', JSON.stringify(convertedGroups));
         } else {
-          setGroups(parsedGroups);
+          // New format - ensure all groups have required properties
+          const enhancedGroups = Object.entries(parsedGroups).reduce((acc, [groupId, group]) => {
+            const groupData = group as any;
+            acc[groupId] = {
+              name: groupData.name || 'Unnamed Group',
+              lines: groupData.lines || [],
+              stoneType: groupData.stoneType || '',
+              description: groupData.description || '',
+              purpose: groupData.purpose || '',
+              type: groupData.type || 'group',
+              createdAt: groupData.createdAt || new Date().toISOString(),
+              sourceGroups: groupData.sourceGroups || []
+            };
+            return acc;
+          }, {} as {[key: string]: any});
+          setGroups(enhancedGroups);
         }
       } catch (error) {
         console.error('Failed to load groups from localStorage:', error);
@@ -120,17 +136,86 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   const clearSelection = () => {
     setSelectedLines([]);
     setSelectedGroup(null);
+    setSelectedGroups([]);
     selectedLines.forEach(lineId => {
       unhighlightLine(lineId);
     });
   };
   
+  const createRoom = () => {
+    if (selectedGroups.length < 2) {
+      alert('Please select at least 2 groups to create a room.');
+      return;
+    }
+    
+    // Calculate total lines and get group info
+    const allLines = new Set<string>();
+    const groupNames: string[] = [];
+    const roomStoneType = groups[selectedGroups[0]]?.stoneType || '';
+    
+    selectedGroups.forEach(groupId => {
+      const group = groups[groupId];
+      if (group) {
+        group.lines.forEach(lineId => allLines.add(lineId));
+        groupNames.push(group.name);
+      }
+    });
+    
+    // Create detailed prompt with room information
+    const roomInfo = `
+Creating Room Details:
+• Groups to merge: ${groupNames.join(', ')}
+• Total lines: ${allLines.size}
+• Stone type: ${roomStoneType || 'Not set'}
+
+Please enter the following:
+`;
+    
+    const roomName = prompt(`${roomInfo}Room name:`);
+    if (!roomName || !roomName.trim()) {
+      return;
+    }
+    
+    const roomDescription = prompt('Room description (optional):');
+    const roomPurpose = prompt('Room purpose (e.g., Kitchen, Bathroom, Living Room):');
+    
+    // Create new room as a container for groups (don't merge lines)
+    const roomId = `room_${Date.now()}`;
+    const newRoom = {
+      name: roomName.trim(),
+      description: roomDescription?.trim() || '',
+      purpose: roomPurpose?.trim() || '',
+      lines: [], // Room doesn't have its own lines
+      stoneType: roomStoneType,
+      createdAt: new Date().toISOString(),
+      type: 'room', // Mark as room type
+      childGroups: selectedGroups // Store groups that belong to this room
+    };
+    
+    // Save to localStorage immediately
+    const updatedGroups = { ...groups };
+    // Add new room (don't remove original groups)
+    updatedGroups[roomId] = newRoom;
+    
+    // Update state
+    setGroups(updatedGroups);
+    localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+    setSelectedGroups([]);
+    setSelectedGroup(roomId);
+    
+    alert(`Room "${roomName.trim()}" created successfully!\n\nDetails:\n• Contains ${groupNames.length} groups\n• Purpose: ${roomPurpose || 'Not specified'}\n• Groups: ${groupNames.join(', ')}`);
+  };
+  
   const selectGroup = (groupId: string) => {
-    // First clear any previously selected group
-    if (selectedGroup && selectedGroup !== groupId) {
-      const prevGroup = groups[selectedGroup];
-      if (prevGroup) {
-        prevGroup.lines.forEach(lineId => {
+    // Toggle group selection for multi-selection
+    if (selectedGroups.includes(groupId)) {
+      // Deselect the group from multi-selection
+      setSelectedGroups(selectedGroups.filter(id => id !== groupId));
+      
+      // Revert lines back to default
+      const group = groups[groupId];
+      if (group) {
+        group.lines.forEach(lineId => {
           const line = document?.getElementById(lineId)?.nextSibling;
           if (line) {
             line.style.stroke = 'black';
@@ -138,21 +223,30 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
           }
         });
       }
-    }
-    
-    setSelectedGroup(groupId);
-    setSelectedLines([]);
-    
-    // Apply yellow color to selected group lines
-    const group = groups[groupId];
-    if (group) {
-      group.lines.forEach(lineId => {
-        const line = document?.getElementById(lineId)?.nextSibling;
-        if (line) {
-          line.style.stroke = 'red';
-          line.style.strokeWidth = '15px';
-        }
-      });
+      
+      // Clear single selection if this was the only group selected
+      const remainingGroups = selectedGroups.filter(id => id !== groupId);
+      if (remainingGroups.length === 0) {
+        setSelectedGroup(null);
+      }
+    } else {
+      // Add to multi-selection
+      setSelectedGroups([...selectedGroups, groupId]);
+      
+      // Apply orange color to selected group lines
+      const group = groups[groupId];
+      if (group) {
+        group.lines.forEach(lineId => {
+          const line = document?.getElementById(lineId)?.nextSibling;
+          if (line) {
+            line.style.stroke = 'orange';
+            line.style.strokeWidth = '15px';
+          }
+        });
+      }
+      
+      // Set as single selected group
+      setSelectedGroup(groupId);
     }
   };
   
@@ -250,7 +344,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       {project && <ProjectDetailCard project={project} />}
       
       {/* Stone Type Selection - Only show when group is selected */}
-      {selectedGroup && (
+      {selectedGroup && selectedGroups.length <= 1 && (
         <div className="fixed bottom-4 left-4 p-4 rounded shadow-lg border max-w-xs">
           <h3 className="font-semibold mb-2">Stone Type</h3>
           <select 
@@ -326,10 +420,25 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         <div className="text-sm space-y-1">
           <div>Selected Lines: {selectedLines.length}</div>
           <div>Total Groups: {Object.keys(groups).length}</div>
+          {selectedGroups.length > 0 && (
+            <div className="text-orange-600 font-semibold">
+              Selected Groups: {selectedGroups.length}
+            </div>
+          )}
           {currentGroup && groups[currentGroup] && (
             <div className="text-blue-600">Current Group: {groups[currentGroup].name}</div>
           )}
         </div>
+        
+        {/* Create Room button */}
+        {selectedGroups.length >= 2 && (
+          <button
+            onClick={createRoom}
+            className="w-full bg-purple-600 text-white cursor-pointer px-2 py-1 rounded text-xs transition-colors duration-200 hover:bg-purple-700 mt-2"
+          >
+            Create Room ({selectedGroups.length} groups)
+          </button>
+        )}
         
         {/* Display all groups */}
         {Object.keys(groups).length > 0 && (
@@ -340,12 +449,31 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                 <div 
                   key={groupId} 
                   className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-700 px-1 rounded ${
-                    selectedGroup === groupId ? 'bg-yellow-00 border border-yellow-300' : ''
+                    selectedGroups.includes(groupId) ? 'bg-orange-100 border border-orange-300' : 
+                    selectedGroup === groupId ? 'bg-yellow-100 border border-yellow-300' : ''
                   }`}
-                  onClick={() => selectedGroup === groupId ? deselectGroup() : selectGroup(groupId)}
+                  onClick={() => selectGroup(groupId)}
                 >
-                  <span className="truncate">{group.name}</span>
-                  <span className="text-gray-500">({group.lines.length} lines)</span>
+                  <div className="flex-1">
+                    <span className="truncate">{group.name}</span>
+                    {group.type === 'room' && (
+                      <span className="text-purple-600 ml-1 text-xs">🏠</span>
+                    )}
+                    {group.purpose && (
+                      <div className="text-xs text-gray-500">{group.purpose}</div>
+                    )}
+                    {group.type === 'room' && group.childGroups && group.childGroups.length > 0 && (
+                      <div className="text-xs text-purple-500">
+                        {group.childGroups.length} groups
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-500">({group.lines.length})</span>
+                    {selectedGroups.includes(groupId) && (
+                      <span className="text-orange-600 ml-1">✓</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -378,7 +506,24 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       </div>
       <div className="fixed bottom-4 right-4 p-3 rounded shadow-lg border max-w-xs">
         <div className="text-sm font-semibold mb-1">Group Tooltip</div>
-        {selectedGroup ? (
+        
+        {/* Show Create Room option when multiple groups selected */}
+        {selectedGroups.length >= 2 && (
+          <div className="space-y-2">
+            <div className="text-xs text-gray-600">
+              {selectedGroups.length} groups selected for room creation
+            </div>
+            <button
+              onClick={createRoom}
+              className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+            >
+              Create Room ({selectedGroups.length} groups)
+            </button>
+          </div>
+        )}
+        
+        {/* Show single group details when one group selected */}
+        {selectedGroup && selectedGroups.length <= 1 && (
           <div className="space-y-2">
             <div className="text-xs text-gray-600">
               Selected Group: {groups[selectedGroup]?.name}
@@ -390,32 +535,28 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                   <span>{lineId}</span>
                   <button
                     onClick={() => {
+                      const updatedGroup = {
+                        ...groups[selectedGroup],
+                        lines: groups[selectedGroup].lines.filter(id => id !== lineId)
+                      };
                       setGroups(prev => ({
                         ...prev,
-                        [selectedGroup]: {
-                          ...prev[selectedGroup],
-                          lines: prev[selectedGroup].lines.filter(id => id !== lineId)
-                        }
+                        [selectedGroup]: updatedGroup
                       }));
+                      // Revert the line back to default
                       const line = document?.getElementById(lineId)?.nextSibling;
                       if (line) {
                         line.style.stroke = 'black';
                         line.style.strokeWidth = '8px';
                       }
                     }}
-                    className="text-red-500 cursor-pointer transition-colors duration-200 hover:text-red-700 font-bold text-xs"
+                    className="text-red-500 hover:text-red-700 text-xs px-1"
                   >
                     x
                   </button>
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => deselectGroup()}
-              className="w-full bg-gray-500 text-white cursor-pointer px-2 py-1 rounded text-xs transition-colors duration-200 hover:bg-gray-600"
-            >
-              Deselect Group
-            </button>
             <button
               onClick={() => {
                 // Get other groups that can be merged
@@ -460,6 +601,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                       
                       // Select the merged group
                       setSelectedGroup(targetGroupId);
+                      setSelectedGroups([targetGroupId]);
                       
                       // Apply visual styling to merged group
                       mergedLines.forEach(lineId => {
@@ -506,7 +648,10 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
               Delete Group
             </button>
           </div>
-        ) : (
+        )}
+        
+        {/* Show line selection info when no groups selected */}
+        {!selectedGroup && selectedGroups.length === 0 && (
           <div className="text-xs text-gray-600">
             {selectedLines.length > 0
               ? `Selected: ${selectedLines.join(', ')}`
