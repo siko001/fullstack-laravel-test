@@ -549,6 +549,7 @@ Please enter the following:
             >
               Group Info
             </button>
+           { Object.keys(groups).filter(id => groups[id].type === 'room').length > 0 && (
             <button
               onClick={() => setTooltipMode('room')}
               className={`px-2 py-1 text-xs rounded ${
@@ -559,6 +560,7 @@ Please enter the following:
             >
               Room Info
             </button>
+           )}
           </div>
         </div>
         
@@ -811,8 +813,8 @@ Please enter the following:
             
             {/* Show message when no rooms exist */}
             {Object.keys(groups).filter(id => groups[id].type === 'room').length === 0 && (
-              <div className="text-xs text-gray-500 text-center py-2">
-                No rooms created yet. Select multiple groups and create a room.
+              <div className="text-xs text-gray-500 py-2">
+                No rooms created yet.<br></br> Select multiple groups to create a room.
               </div>
             )}
           </div>
