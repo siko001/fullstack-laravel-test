@@ -149,7 +149,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       group.lines.forEach(lineId => {
         const line = document?.getElementById(lineId)?.nextSibling;
         if (line) {
-          line.style.stroke = 'yellow';
+          line.style.stroke = 'red';
           line.style.strokeWidth = '15px';
         }
       });
@@ -183,9 +183,6 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
     if (isInGroup) {
       line.style.stroke = 'blue';
       line.style.strokeWidth = '12px';
-    } else if (selectedLines.includes(id)) {
-      line.style.stroke = 'orange';
-      line.style.strokeWidth = '15px';
     }
     
     setPreviousIds([...previousIds, id]);
@@ -224,8 +221,8 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       selectedLines.forEach(lineId => {
         const line = document?.getElementById(lineId)?.nextSibling;
         if (line) {
-          line.style.stroke = 'orange';
-          line.style.strokeWidth = '15px';
+          line.style.stroke = 'blue';
+          line.style.strokeWidth = '20px';
         }
       });
     }, [selectedLines]);
@@ -251,6 +248,63 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   return (
     <div>
       {project && <ProjectDetailCard project={project} />}
+      
+      {/* Stone Type Selection - Only show when group is selected */}
+      {selectedGroup && (
+        <div className="fixed bottom-4 left-4 p-4 rounded shadow-lg border max-w-xs">
+          <h3 className="font-semibold mb-2">Stone Type</h3>
+          <select 
+            className="w-full p-2 border rounded text-sm"
+            value={groups[selectedGroup]?.stoneType || ''}
+            onChange={(e) => {
+              const stoneType = e.target.value;
+              if (stoneType === 'custom') {
+                const customValue = prompt('Enter custom stone type:');
+                if (customValue && customValue.trim()) {
+                  setGroups(prev => ({
+                    ...prev,
+                    [selectedGroup]: {
+                      ...prev[selectedGroup],
+                      stoneType: customValue.trim()
+                    }
+                  }));
+                }
+              } else if (stoneType) {
+                setGroups(prev => ({
+                  ...prev,
+                  [selectedGroup]: {
+                    ...prev[selectedGroup],
+                    stoneType
+                  }
+                }));
+              }
+            }}
+          >
+            <option value="">Select Stone Type</option>
+            <option value="marble">Marble</option>
+            <option value="granite">Granite</option>
+            <option value="limestone">Limestone</option>
+            <option value="sandstone">Sandstone</option>
+            <option value="slate">Slate</option>
+            <option value="travertine">Travertine</option>
+            <option value="quartzite">Quartzite</option>
+            <option value="onyx">Onyx</option>
+            <option value="custom">Custom...</option>
+          </select>
+          <div className="text-xs text-gray-600 mt-2">
+            Group: {groups[selectedGroup]?.name}
+            {groups[selectedGroup]?.stoneType && (
+              <span className="block mt-1">
+                Current: {groups[selectedGroup].stoneType}
+                {!['marble', 'granite', 'limestone', 'sandstone', 'slate', 'travertine', 'quartzite', 'onyx'].includes(groups[selectedGroup].stoneType) && (
+                  <span className="text-purple-600 ml-1">(Custom)</span>
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div className="max-h-screen min-h-screen grid place-items-center">
         <div className="max-h-[800px] mx-auto mt-8">
             <SvgComponent selectLine={selectLine} svgContent={svgContent || ""} project={project} svgContainerRef={svgContainerRef || ''} setLoading={setLoading} setSvgContent={setSvgContent}  setTooltipText={setTooltipText} tooltipRef={tooltipRef} setSelectedId={setSelectedId} loading={loading}  />
@@ -285,8 +339,8 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
               {Object.entries(groups).map(([groupId, group]) => (
                 <div 
                   key={groupId} 
-                  className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-100 px-1 rounded ${
-                    selectedGroup === groupId ? 'bg-yellow-100 border border-yellow-300' : ''
+                  className={`text-xs flex justify-between items-center cursor-pointer hover:bg-gray-700 px-1 rounded ${
+                    selectedGroup === groupId ? 'bg-yellow-00 border border-yellow-300' : ''
                   }`}
                   onClick={() => selectedGroup === groupId ? deselectGroup() : selectGroup(groupId)}
                 >
@@ -308,7 +362,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         {selectedGroup && (
           <button 
             onClick={deselectGroup}
-            className="mt-2 w-full bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
+            className="mt-2 w-full bg-yellow-500 cursor pointer text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
           >
             Deselect Group
           </button>
@@ -316,20 +370,150 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         {selectedLines.length > 0 && (
           <button 
             onClick={clearSelection}
-            className="mt-2 w-full bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
+            className="mt-2 w-full bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-800"
           >
             Clear Selection
           </button>
         )}
       </div>
-      <div className="fixed bottom-4 right-4  p-3 rounded shadow-lg border max-w-xs">
+      <div className="fixed bottom-4 right-4 p-3 rounded shadow-lg border max-w-xs">
         <div className="text-sm font-semibold mb-1">Group Tooltip</div>
-        <div className="text-xs text-gray-600">
-          {selectedLines.length > 0 
-            ? `Selected: ${selectedLines.join(', ')}`
-            : 'Click lines to select multiple'
-          }
-        </div>
+        {selectedGroup ? (
+          <div className="space-y-2">
+            <div className="text-xs text-gray-600">
+              Selected Group: {groups[selectedGroup]?.name}
+            </div>
+            <div className="text-xs text-gray-600 space-y-1">
+              Lines:
+              {groups[selectedGroup]?.lines.map(lineId => (
+                <div key={lineId} className="flex justify-between items-center">
+                  <span>{lineId}</span>
+                  <button
+                    onClick={() => {
+                      setGroups(prev => ({
+                        ...prev,
+                        [selectedGroup]: {
+                          ...prev[selectedGroup],
+                          lines: prev[selectedGroup].lines.filter(id => id !== lineId)
+                        }
+                      }));
+                      const line = document?.getElementById(lineId)?.nextSibling;
+                      if (line) {
+                        line.style.stroke = 'black';
+                        line.style.strokeWidth = '8px';
+                      }
+                    }}
+                    className="text-red-500 cursor-pointer transition-colors duration-200 hover:text-red-700 font-bold text-xs"
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => deselectGroup()}
+              className="w-full bg-gray-500 text-white cursor-pointer px-2 py-1 rounded text-xs transition-colors duration-200 hover:bg-gray-600"
+            >
+              Deselect Group
+            </button>
+            <button
+              onClick={() => {
+                // Get other groups that can be merged
+                const otherGroups = Object.entries(groups).filter(([id]) => id !== selectedGroup);
+                
+                if (otherGroups.length === 0) {
+                  alert('No other groups available to merge with.');
+                  return;
+                }
+                
+                // Create a simple selection interface
+                const groupOptions = otherGroups.map(([id, group], index) => 
+                  `${index + 1}. ${group.name} (${group.lines.length} lines)`
+                ).join('\n');
+                
+                const choice = prompt(`Select a group to merge with:\n\n${groupOptions}\n\nEnter the number (1-${otherGroups.length}):`);
+                
+                if (choice && !isNaN(Number(choice))) {
+                  const selectedIndex = Number(choice) - 1;
+                  if (selectedIndex >= 0 && selectedIndex < otherGroups.length) {
+                    const [targetGroupId, targetGroup] = otherGroups[selectedIndex];
+                    
+                    if (confirm(`Merge "${groups[selectedGroup].name}" into "${targetGroup.name}"?`)) {
+                      // Merge the groups
+                      const mergedLines = [...new Set([...targetGroup.lines, ...groups[selectedGroup].lines])];
+                      
+                      // Update the target group with merged lines
+                      setGroups(prev => ({
+                        ...prev,
+                        [targetGroupId]: {
+                          ...prev[targetGroupId],
+                          lines: mergedLines
+                        }
+                      }));
+                      
+                      // Remove the current group
+                      setGroups(prev => {
+                        const newGroups = { ...prev };
+                        delete newGroups[selectedGroup];
+                        return newGroups;
+                      });
+                      
+                      // Select the merged group
+                      setSelectedGroup(targetGroupId);
+                      
+                      // Apply visual styling to merged group
+                      mergedLines.forEach(lineId => {
+                        const line = document?.getElementById(lineId)?.nextSibling;
+                        if (line) {
+                          line.style.stroke = 'red';
+                          line.style.strokeWidth = '15px';
+                        }
+                      });
+                    }
+                  }
+                }
+              }}
+              className="w-full bg-purple-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+            >
+              Merge Groups
+            </button>
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this group?')) {
+                  // Revert all lines in this group back to default
+                  const group = groups[selectedGroup];
+                  if (group) {
+                    group.lines.forEach(lineId => {
+                      const line = document?.getElementById(lineId)?.nextSibling;
+                      if (line) {
+                        line.style.stroke = 'black';
+                        line.style.strokeWidth = '8px';
+                      }
+                    });
+                  }
+                  
+                  // Remove the group from state
+                  setGroups(prev => {
+                    const newGroups = { ...prev };
+                    delete newGroups[selectedGroup];
+                    return newGroups;
+                  });
+                  setSelectedGroup(null);
+                }
+              }}
+              className="w-full bg-red-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+            >
+              Delete Group
+            </button>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-600">
+            {selectedLines.length > 0
+              ? `Selected: ${selectedLines.join(', ')}`
+              : 'Click lines to select multiple'
+            }
+          </div>
+        )}
       </div>
     </div>
   );

@@ -152,12 +152,11 @@ svg{
     padding: 2rem;
 }
 
-svg g, svg g * {
+ svg g line {
   pointer-events: visiblePainted;
+  stroke-width: 20px;
+
 }
-
-
-
 
 
 
