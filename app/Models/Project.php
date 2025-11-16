@@ -14,7 +14,10 @@ class Project extends Model
         'postcode',
         'project_type',
         'address',
+        'svg_path',
     ];
+    
+    
     
     
 }

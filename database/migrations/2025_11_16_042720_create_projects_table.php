@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('postcode');
             $table->string('project_type');
             $table->text('address');
+            $table->text('svg_path')->nullable();
         });
     }
 

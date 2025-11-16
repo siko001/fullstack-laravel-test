@@ -17,9 +17,22 @@ Route::get('/', function () {
     }
     else
     {
-        return Inertia::render('project-inner', [
-            'project' => $projects->first(),
-        ]);
+        $project = $projects->first();
+        
+       if(!$project->svg_path)
+       {
+        // upload plan
+          return Inertia::render('project-inner-plan', [
+               'project' => $project,
+           ]);
+       }
+       else
+       {
+        // show project
+          return Inertia::render('project-inner', [
+               'project' => $project,
+           ]);
+       }
     }
 })->name('home');
 
