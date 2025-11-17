@@ -9,6 +9,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previousIds, setPreviousIds] = useState<string | null>([]);
+  const [previousSelectedLines, setPreviousSelectedLines] = useState<string[]>([]);
   const [selectedLines, setSelectedLines] = useState<string[]>([]);
   const [groups, setGroups] = useState<{[key: string]: {name: string, lines: string[]}}>({});
   const [groupNames, setGroupNames] = useState<{[key: string]: string}>({});
@@ -346,6 +347,17 @@ Please enter the following:
     
     // Update visual styling for selected lines
     useEffect(() => {
+      // Unhighlight lines that are no longer selected
+      const deselectedLines = previousSelectedLines.filter(lineId => !selectedLines.includes(lineId));
+      deselectedLines.forEach(lineId => {
+        const line = document?.getElementById(lineId)?.nextSibling;
+        if (line) {
+          line.style.stroke = 'black';
+          line.style.strokeWidth = '8px';
+        }
+      });
+      
+      // Highlight newly selected lines
       selectedLines.forEach(lineId => {
         const line = document?.getElementById(lineId)?.nextSibling;
         if (line) {
@@ -353,6 +365,9 @@ Please enter the following:
           line.style.strokeWidth = '20px';
         }
       });
+      
+      // Update previous selection for next render
+      setPreviousSelectedLines(selectedLines);
     }, [selectedLines]);
     
     // Update visual styling for grouped lines
