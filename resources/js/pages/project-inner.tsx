@@ -595,14 +595,33 @@ Please enter the following:
                       <span>{lineId}</span>
                       <button
                         onClick={() => {
-                          const updatedGroup = {
-                            ...groups[selectedGroup],
-                            lines: groups[selectedGroup].lines.filter(id => id !== lineId)
-                          };
-                          setGroups(prev => ({
-                            ...prev,
-                            [selectedGroup]: updatedGroup
-                          }));
+                          const updatedLines = groups[selectedGroup].lines.filter(id => id !== lineId);
+                          let updatedGroups;
+                          
+                          // Check if group will be empty after removing this line
+                          if (updatedLines.length === 0) {
+                            // Remove the entire group if it will be empty
+                            updatedGroups = { ...groups };
+                            delete updatedGroups[selectedGroup];
+                            setGroups(updatedGroups);
+                            setSelectedGroup(null);
+                            // Also remove from selectedGroups array
+                            setSelectedGroups(prev => prev.filter(id => id !== selectedGroup));
+                          } else {
+                            // Update group with remaining lines
+                            updatedGroups = {
+                              ...groups,
+                              [selectedGroup]: {
+                                ...groups[selectedGroup],
+                                lines: updatedLines
+                              }
+                            };
+                            setGroups(updatedGroups);
+                          }
+                          
+                          // Immediately save to localStorage
+                          localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+                          
                           // Revert the line back to default
                           const line = document?.getElementById(lineId)?.nextSibling;
                           if (line) {
@@ -694,13 +713,20 @@ Please enter the following:
                         });
                       }
                       
-                      // Remove the group from state
+                      // Remove the group from state and localStorage
                       setGroups(prev => {
                         const newGroups = { ...prev };
                         delete newGroups[selectedGroup];
+                        
+                        // Update localStorage immediately
+                        localStorage.setItem('lineGroups', JSON.stringify(newGroups));
+                        
                         return newGroups;
                       });
                       setSelectedGroup(null);
+                      
+                      // Also remove from selectedGroups if it was selected for multi-selection
+                      setSelectedGroups(prev => prev.filter(id => id !== selectedGroup));
                     }
                   }}
                   className="w-full bg-red-600 transition-colors duration-200 cursor-pointer text-white px-2 py-1 rounded text-xs hover:bg-red-700"
