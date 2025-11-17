@@ -549,28 +549,32 @@ Please enter the following:
       </div>
 }
       <div className="fixed bottom-4 right-4 p-3 rounded shadow-lg border max-w-xs">
-        <div className="flex justify-between flex-col  mb-2">
+        <div className="flex justify-between items-center gap-2  mb-2">
           <div className="text-sm font-semibold">
             {tooltipMode === 'group' ? 'Group Info' : 'Room Info'}
           </div>
           <div className="flex gap-1">
+            
+            {/* Show Group Info button when there are groups or when in room mode (to switch back) */}
+            {(tooltipMode === 'room' && Object.keys(groups).filter(id => groups[id].type === 'group').length > 0) && (
             <button
               onClick={() => setTooltipMode('group')}
               className={`px-2 py-1 text-xs rounded ${
-                tooltipMode === 'group' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                tooltipMode == 'group' 
+                  ? null
+                  : 'bg-blue-500 text-white' 
               }`}
             >
               Group Info
             </button>
-           { Object.keys(groups).filter(id => groups[id].type === 'room').length > 0 && (
+           )}
+           { tooltipMode === 'group' && Object.keys(groups).filter(id => groups[id].type === 'room').length > 0 && (
             <button
               onClick={() => setTooltipMode('room')}
               className={`px-2 py-1 text-xs rounded ${
                 tooltipMode === 'room' 
-                  ? 'bg-purple-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-purple-500 text-white' 
               }`}
             >
               Room Info
