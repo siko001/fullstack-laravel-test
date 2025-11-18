@@ -518,7 +518,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                           <span className="text-blue-700">{name}</span>
                           <button
                             onClick={() => removeLineFromGroup(selectedToolTip, id)}
-                            className="text-red-500 cursor-pointer  hover:text-red-700 px-1 text-xs"
+                            className="text-red-500 cursor-pointer hover:text-red-700 px-1 text-xs"
                             title="Remove from group"
                           >
                             ✕
@@ -536,7 +536,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                           <span className="text-purple-700">{name}</span>
                           <button
                             onClick={() => removeLineFromGroup(selectedToolTip, id)}
-                            className="text-red-500 hover:text-red-700 px-1 text-xs"
+                            className="text-red-500 cursor-pointer hover:text-red-700 px-1 text-xs"
                             title="Remove from room"
                           >
                             ✕
