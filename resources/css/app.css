@@ -197,6 +197,8 @@ button:hover {
 .plan-manager .plan-preview svg {
     position: relative;
     transform: translateX(12%);
+    top: 1rem;
+    scale: 120%;
 }
 
 @media (max-width: 640px) {
