@@ -538,7 +538,7 @@ Please enter the following:
       )}
       
       <div className="max-h-screen min-h-screen grid place-items-center">
-        <div className="max-h-[800px] mx-auto mt-8">
+        <div className="max-h-[800px] mx-auto mt-8" style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
             <SvgComponent selectLine={selectLine} svgContent={svgContent || ""} project={project} svgContainerRef={svgContainerRef || ''} setLoading={setLoading} setSvgContent={setSvgContent}  setTooltipText={setTooltipText} tooltipRef={tooltipRef} setSelectedId={setSelectedId} loading={loading}  />
         </div>
       </div>
