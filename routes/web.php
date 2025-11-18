@@ -81,4 +81,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // API routes for SVG operations
 Route::post('/save-svg', [SvgController::class, 'saveSvg']);
 
+
+Route::delete('/projects/{id}', function (Request $request, int $id) {
+    $project = Project::findOrFail($id);
+    $project->delete();
+    return response()->noContent();
+});
+
+
+
+
+
+
+
+
+
 require __DIR__.'/settings.php';
+
+

@@ -215,7 +215,7 @@ function SVGMetadataButton({ onClick, hasData }: SVGMetadataButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`fixed cursor-pointer top-28 left-2 px-3 py-2 rounded shadow-lg transition-all transform hover:scale-105 z-50 ${
+      className={`fixed cursor-pointer top-32 left-2 px-3 py-2 rounded shadow-lg transition-all transform hover:scale-105 z-50 ${
         hasData
           ? 'bg-blue-600 text-white hover:bg-blue-700'
           : 'bg-gray-400 text-gray-200 cursor-not-allowed'
