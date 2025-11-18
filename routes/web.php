@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -104,6 +105,13 @@ Route::post('/projects/{project}/plans', function (Request $request, Project $pr
 
 Route::delete('/projects/{project}/plans/{plan}', function (Project $project, ProjectPlan $plan) {
     abort_unless($plan->project_id === $project->id, 404);
+
+    if ($plan->svg_path) {
+        $svgPath = public_path($plan->svg_path);
+        if (File::exists($svgPath)) {
+            File::delete($svgPath);
+        }
+    }
 
     $plan->delete();
 

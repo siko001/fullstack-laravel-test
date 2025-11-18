@@ -36,6 +36,9 @@ export default function ProjectDetailCard({ project, plan }: ProjectDetailCardPr
                 throw new Error(message || 'Unable to delete plan');
             }
 
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(`lineGroups:${plan.id}`);
+            }
             window.location.href = `/projects/${project.id}`;
         } catch (error) {
             console.error('Delete plan failed:', error);

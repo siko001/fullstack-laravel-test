@@ -44,11 +44,13 @@ export default function ProjectPlanManager({
 
     const handleCreatePlan = async () => {
         if (availableSlots <= 0 || isCreating) return;
-
         const requestedName = prompt(
             'Enter a name for the new plan (optional):'
         );
 
+        if (requestedName === null) {
+            return;
+        }
         setIsCreating(true);
         try {
             const response = await fetch(`/projects/${project.id}/plans`, {
@@ -111,6 +113,9 @@ export default function ProjectPlanManager({
                 throw new Error(message || 'Unable to delete plan');
             }
 
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(`lineGroups:${planId}`);
+            }
             window.location.reload();
         } catch (error) {
             console.error('Delete plan failed:', error);
