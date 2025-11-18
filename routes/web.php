@@ -12,15 +12,31 @@ use App\Http\Controllers\SvgController;
 
 // Home
 Route::get('/', function () {
-    $project = Project::with(['plans' => fn ($query) => $query->orderBy('slot')])->first();
+    $projects = Project::all();
 
-    if (!$project) {
+    if ($projects->isEmpty()) {
         return Inertia::render('welcome-demo');
     }
 
-    return redirect()->route('project.show', $project);
+    return redirect()->route('projects.index');
 })->name('home');
 
+
+// List Projects
+Route::get('/projects', function () {
+    $projects = Project::with(['plans' => fn ($query) => $query->orderBy('slot')])
+        ->withCount('plans')
+        ->get();
+
+    return Inertia::render('projects-index', [
+        'projects' => $projects,
+    ]);
+})->name('projects.index');
+
+// Create Project Form
+Route::get('/create-project', function () {
+    return Inertia::render('welcome-demo');
+})->name('projects.create');
 
 // Create Project
 Route::post('/projects', function () {
