@@ -2,10 +2,18 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 
 import ProjectDetailCard from '@/components/project-detail-card';
 import SvgComponent from '@/components/svg-component';
+import SVGMetadataParser, { SVGMetadataParserRef } from '@/components/svg-metadata-parser';
 
 export default function ProjectInner({ project, url }: { project: any, url: string }) {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const metadataParserRef = useRef<SVGMetadataParserRef>(null);
+  
+  // Handle metadata changes
+  const handleMetadataChange = (metadata: any, textElements: any, rooms: any) => {
+    console.log('SVG Metadata parsed:', { metadata, textElements, rooms });
+    // Use Data for rooms
+  };
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previousIds, setPreviousIds] = useState<string | null>([]);
@@ -491,6 +499,13 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
             <SvgComponent selectLine={selectLine} svgContent={svgContent || ""} project={project} svgContainerRef={svgContainerRef || ''} setLoading={setLoading} setSvgContent={setSvgContent}  setTooltipText={setTooltipText} tooltipRef={tooltipRef} setSelectedId={setSelectedId} loading={loading}  />
         </div>
       </div>
+      
+      {/* SVG Metadata Parser */}
+      <SVGMetadataParser
+        ref={metadataParserRef}
+        svgContent={svgContent}
+        onMetadataChange={handleMetadataChange}
+      />
 
     {/* hover Tooltip */}
       <div ref={tooltipRef} className='hover-tooltip' style={{ position: 'fixed', display: 'none', pointerEvents: 'none', zIndex: 50 }} >
