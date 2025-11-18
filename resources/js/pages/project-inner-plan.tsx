@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import ProjectDetailCard from '@/components/project-detail-card';
 
-export default function ProjectInner({ project }: { project: any }) {
+export default function ProjectInnerPlan({ project, plan }: { project: any; plan: any }) {
     const [libredwg, setLibredwg] = useState(null);
     const [svgContent, setSvgContent] = useState(null);
     const fileInputRef = useRef(null);
@@ -50,11 +50,12 @@ export default function ProjectInner({ project }: { project: any }) {
     const saveSvg = async (svgString: any) => {
     try {
         const projectName = project.name.replace(/\s/g, '-').toLowerCase();
-        const filename = `${projectName}-${Date.now()}.svg`;
+        const planLabel = plan?.name?.replace(/\s/g, '-').toLowerCase() ?? `plan-${plan?.slot ?? '1'}`;
+        const filename = `${projectName}-${planLabel}-${Date.now()}.svg`;
         const response = await axios.post('/save-svg', {
             filename: filename,
             svg: svgString,
-            project_id: project.id
+            plan_id: plan.id
         });
         
         // Show success message
@@ -87,7 +88,7 @@ export default function ProjectInner({ project }: { project: any }) {
     
     return (
         <div className="w-full relative h-screen grid place-items-center">
-            {project && <ProjectDetailCard project={project} />}
+            {project && plan && <ProjectDetailCard project={project} plan={plan} />}
     
          <div>
                <div className="flex flex-col-reverse sm:flex-row gap-8 md:items-center ">

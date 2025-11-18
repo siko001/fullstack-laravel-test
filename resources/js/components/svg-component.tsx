@@ -1,6 +1,19 @@
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, RefObject } from "react";
 import { setupHitwalls, keyHandler } from '@/lib/setup-hitwalls';
+
+type SvgComponentProps = {
+  setTooltipText: (text: string) => void;
+  tooltipRef: RefObject<HTMLDivElement | null>;
+  selectLine: (id: string) => void;
+  loading: boolean;
+  svgContent: string;
+  svgContainerRef: RefObject<HTMLDivElement>;
+  plan: any;
+  setLoading: (loading: boolean) => void;
+  setSvgContent: (svgContent: string) => void;
+};
+
 export default function SvgComponent({
    setTooltipText,
    tooltipRef,
@@ -8,17 +21,18 @@ export default function SvgComponent({
    loading,
    svgContent,
    svgContainerRef,
-   project,
+   plan,
    setLoading,
-   setSvgContent }: { svgContent: string, svgContainerRef: React.RefObject<HTMLDivElement>, project: any, setLoading: (loading: boolean) => void, setSvgContent: (svgContent: string) => void, tooltipRef: React.RefObject<HTMLDivElement | null>, selectLine: (id: string) => void }) {
+   setSvgContent
+ }: SvgComponentProps) {
   const handlersRef = useRef<{ enter: (e: MouseEvent) => void; move: (e: MouseEvent) => void; leave: (e: MouseEvent) => void; click: (e: MouseEvent) => void } | null>(null);
   
     // Load SVG
     useEffect(() => {
-      if (project.svg_path) {
+      if (plan?.svg_path) {
         const fetchSvg = async () => {
           try {
-            const response = await fetch(`/${project.svg_path}`);
+            const response = await fetch(`/${plan.svg_path}`);
             const svgText = await response.text();
             setSvgContent(svgText);
           } catch (error) {
@@ -31,7 +45,7 @@ export default function SvgComponent({
       } else {
         setLoading(false);
       }
-    }, []);
+    }, [plan?.svg_path, setLoading, setSvgContent]);
     
     
     
@@ -75,7 +89,7 @@ export default function SvgComponent({
           leave: handleMouseLeave,
           click: handleClick
         };
-      }, []);
+      }, [selectLine, setTooltipText, tooltipRef]);
     
     
       useEffect(() => {
@@ -111,7 +125,7 @@ export default function SvgComponent({
             keyCleanup();
           };
         }
-      }, [loading, setupMouseHandlers]);
+      }, [loading, setupMouseHandlers, svgContainerRef]);
     
     
     

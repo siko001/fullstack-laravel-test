@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\Project;
+use App\Models\ProjectPlan;
 
 class SvgController extends Controller
 {
@@ -17,7 +17,7 @@ class SvgController extends Controller
             $validated = $request->validate([
                 'filename' => 'required|string',
                 'svg' => 'required|string',
-                'project_id' => 'required|integer'
+                'plan_id' => 'required|integer|exists:project_plans,id',
             ]);
 
             $filename = $validated['filename'];
@@ -29,14 +29,14 @@ class SvgController extends Controller
             $filePath = public_path($filename);
             file_put_contents($filePath, $svgContent);
             
-            // Save the path in the database
-            $project = Project::where('id', $request->project_id)->first();
-            $project->svg_path = $filename;
-            $project->save();
+            $plan = ProjectPlan::with('project')->findOrFail($validated['plan_id']);
+            $plan->svg_path = $filename;
+            $plan->status = 'ready';
+            $plan->save();
           
             return response()->json([
                 'message' => 'SVG saved successfully!',
-                'redirect_url' => route('project.show', $project->id)
+                'redirect_url' => route('project.plan.show', [$plan->project_id, $plan->id]),
             ]);
 
         } catch (\Exception $e) {

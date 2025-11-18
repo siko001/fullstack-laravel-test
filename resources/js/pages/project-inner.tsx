@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 
 import ProjectDetailCard from '@/components/project-detail-card';
 import SvgComponent from '@/components/svg-component';
 import SVGMetadataParser, { SVGMetadataParserRef } from '@/components/svg-metadata-parser';
 
-export default function ProjectInner({ project, url }: { project: any, url: string }) {
+export default function ProjectInner({ project, plan, url }: { project: any, plan: any, url: string }) {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -28,9 +28,18 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
    const [tooltipMode, setTooltipMode] = useState<'group' | 'room'>('group');
   
+  const storageKey = useMemo(() => {
+    if (plan?.id) {
+      return `lineGroups:${plan.id}`;
+    }
+    return 'lineGroups';
+  }, [plan?.id]);
+
   // Load groups from localStorage on component mount
   useEffect(() => {
-    const savedGroups = localStorage.getItem('lineGroups');
+    const savedGroups =
+      localStorage.getItem(storageKey) ??
+      (plan?.id ? localStorage.getItem('lineGroups') : null);
     
     if (savedGroups) {
       try {
@@ -50,7 +59,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
             };
           });
           setGroups(convertedGroups);
-          localStorage.setItem('lineGroups', JSON.stringify(convertedGroups));
+          localStorage.setItem(storageKey, JSON.stringify(convertedGroups));
         } else {
           // New format - ensure all groups have required properties
           const enhancedGroups = Object.entries(parsedGroups).reduce((acc, [groupId, group]) => {
@@ -73,7 +82,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         console.error('Failed to load groups from localStorage:', error);
       }
     }
-  }, []);
+  }, [plan?.id, storageKey]);
   
   const [tooltipText, setTooltipText] = useState<string | null>(null);
   const [selectedToolTip, setSelectedTooltipText] = useState<string | null>(null);
@@ -120,7 +129,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         lines: [...new Set([...updatedGroups[groupId].lines, lineId])]
       };
       setGroups(updatedGroups);
-      localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+      localStorage.setItem(storageKey, JSON.stringify(updatedGroups));
     }
   };
   
@@ -141,7 +150,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       }
       
       setGroups(updatedGroups);
-      localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+      localStorage.setItem(storageKey, JSON.stringify(updatedGroups));
     }
   };
   
@@ -189,9 +198,9 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   // Save groups to localStorage whenever they change
   useEffect(() => {
     if (Object.keys(groups).length > 0) {
-      localStorage.setItem('lineGroups', JSON.stringify(groups));
+      localStorage.setItem(storageKey, JSON.stringify(groups));
     }
-  }, [groups]);
+  }, [groups, storageKey]);
   
   const createGroup = () => {
     if (selectedLines.length < 2) return;
@@ -273,7 +282,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
     
     // Update state
     setGroups(updatedGroups);
-    localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+    localStorage.setItem(storageKey, JSON.stringify(updatedGroups));
     setSelectedGroups([]);
     setSelectedGroup(roomId);
     
@@ -438,7 +447,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   
   return (
     <div>
-      {project && <ProjectDetailCard project={project} />}
+      {project && plan && <ProjectDetailCard project={project} plan={plan} />}
       
       {/* Stone Type Selection - Only show when group is selected */}
       {selectedGroup && selectedGroups.length <= 1 && (
@@ -498,7 +507,17 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       
       <div className=" h-[20vh] grid place-items-center">
         <div className=" mx-auto mt-8" style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
-            <SvgComponent selectLine={selectLine} svgContent={svgContent || ""} project={project} svgContainerRef={svgContainerRef || ''} setLoading={setLoading} setSvgContent={setSvgContent}  setTooltipText={setTooltipText} tooltipRef={tooltipRef} setSelectedId={setSelectedId} loading={loading}  />
+            <SvgComponent
+              selectLine={selectLine}
+              svgContent={svgContent || ""}
+              plan={plan}
+              svgContainerRef={svgContainerRef}
+              setLoading={setLoading}
+              setSvgContent={setSvgContent}
+              setTooltipText={setTooltipText}
+              tooltipRef={tooltipRef}
+              loading={loading}
+            />
         </div>
       </div>
       
@@ -815,7 +834,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                           }
                           
                           // Immediately save to localStorage
-                          localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+                          localStorage.setItem(storageKey, JSON.stringify(updatedGroups));
                           
                           // Revert the line back to default
                           const line = document?.getElementById(lineId)?.nextSibling;
@@ -914,7 +933,7 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
                         delete newGroups[selectedGroup];
                         
                         // Update localStorage immediately
-                        localStorage.setItem('lineGroups', JSON.stringify(newGroups));
+                        localStorage.setItem(storageKey, JSON.stringify(newGroups));
                         
                         return newGroups;
                       });
