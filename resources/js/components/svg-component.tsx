@@ -119,7 +119,7 @@ export default function SvgComponent({
     return (
      <div
         ref={svgContainerRef}
-        className="p-6 bg-white rounded h-[800px] overflow-auto"
+        className="p-6 bg-white rounded h-[calc(100vh-3rem)] scale-[110%] overflow-auto"
         {...(svgContent && { dangerouslySetInnerHTML: { __html: svgContent } })}
     />
     );

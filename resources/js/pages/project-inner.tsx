@@ -111,13 +111,6 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       };
       setGroups(updatedGroups);
       localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
-      
-      // Update visual styling
-      const line = document?.getElementById(lineId)?.nextSibling;
-      if (line) {
-        line.style.stroke = 'blue';
-        line.style.strokeWidth = '12px';
-      }
     }
   };
   
@@ -139,16 +132,6 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
       
       setGroups(updatedGroups);
       localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
-      
-      // Update visual styling
-      const line = document?.getElementById(lineId)?.nextSibling;
-      if (line) {
-        const { groups: remainingGroups, rooms: remainingRooms } = findLineGroups(lineId);
-        if (remainingGroups.length === 0 && remainingRooms.length === 0) {
-          line.style.stroke = 'black';
-          line.style.strokeWidth = '8px';
-        }
-      }
     }
   };
   
@@ -180,7 +163,6 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
         return newSelection;
       } else {
         const newSelection = [...prev, id];
-        console.log('select', newSelection)
         return newSelection;
       }
     });
@@ -214,15 +196,6 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
     }));
     setCurrentGroup(groupId);
     setSelectedLines([]);
-    
-    // Apply visual styling to grouped lines
-    selectedLines.forEach(lineId => {
-      const line = document?.getElementById(lineId)?.nextSibling;
-      if (line) {
-        line.style.stroke = 'black';
-        line.style.strokeWidth = '8px';
-      }
-    });
   };
   
   const clearSelection = () => {
@@ -255,13 +228,13 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
     
     // Create detailed prompt with room information
     const roomInfo = `
-Creating Room Details:
-• Groups to merge: ${groupNames.join(', ')}
-• Total lines: ${allLines.size}
-• Stone type: ${roomStoneType || 'Not set'}
+      Creating Room Details:
+      • Groups to merge: ${groupNames.join(', ')}
+      • Total lines: ${allLines.size}
+      • Stone type: ${roomStoneType || 'Not set'}
 
-Please enter the following:
-`;
+      Please enter the following:
+      `;
     
     const roomName = prompt(`${roomInfo}Room name:`);
     if (!roomName || !roomName.trim()) {
@@ -395,15 +368,6 @@ Please enter the following:
   const highlightLine = (id: string) => {
     const line = document?.getElementById(id)?.nextSibling;
     if (!line) return;
-    
-    // Check if line is in a group
-    const isInGroup = Object.values(groups).some(group => group.lines.includes(id));
-    
-    if (isInGroup) {
-      line.style.stroke = 'blue';
-      line.style.strokeWidth = '12px';
-    }
-    
     setPreviousIds([...previousIds, id]);
   };
   
@@ -459,22 +423,7 @@ Please enter the following:
       // Update previous selection for next render
       setPreviousSelectedLines(selectedLines);
     }, [selectedLines]);
-    
-    // Update visual styling for grouped lines
-    useEffect(() => {
-      Object.values(groups).forEach(group => {
-        group.lines.forEach(lineId => {
-          const line = document?.getElementById(lineId)?.nextSibling;
-          if (line) {
-            line.style.stroke = 'blue';
-            line.style.strokeWidth = '12px';
-          }
-        });
-      });
-    }, [groups]);
-
-
-
+  
 
   
   return (
@@ -537,8 +486,8 @@ Please enter the following:
         </div>
       )}
       
-      <div className="max-h-screen min-h-screen grid place-items-center">
-        <div className="max-h-[800px] mx-auto mt-8" style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
+      <div className=" h-[20vh] grid place-items-center">
+        <div className=" mx-auto mt-8" style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
             <SvgComponent selectLine={selectLine} svgContent={svgContent || ""} project={project} svgContainerRef={svgContainerRef || ''} setLoading={setLoading} setSvgContent={setSvgContent}  setTooltipText={setTooltipText} tooltipRef={tooltipRef} setSelectedId={setSelectedId} loading={loading}  />
         </div>
       </div>
