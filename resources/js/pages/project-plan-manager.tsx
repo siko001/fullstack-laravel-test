@@ -35,9 +35,9 @@ export default function ProjectPlanManager({
     const [isCreating, setIsCreating] = useState(false);
     const csrfToken =
         typeof document !== 'undefined'
-            ? document
+            ? (document
                   ?.querySelector('meta[name="csrf-token"]')
-                  ?.getAttribute('content') ?? ''
+                  ?.getAttribute('content') ?? '')
             : '';
 
     const availableSlots = maxPlans - plans.length;
@@ -45,7 +45,7 @@ export default function ProjectPlanManager({
     const handleCreatePlan = async () => {
         if (availableSlots <= 0 || isCreating) return;
         const requestedName = prompt(
-            'Enter a name for the new plan (optional):'
+            'Enter a name for the new plan (optional):',
         );
 
         if (requestedName === null) {
@@ -80,7 +80,7 @@ export default function ProjectPlanManager({
             alert(
                 error instanceof Error
                     ? error.message
-                    : 'Unable to create plan. Please try again.'
+                    : 'Unable to create plan. Please try again.',
             );
         } finally {
             setIsCreating(false);
@@ -90,7 +90,7 @@ export default function ProjectPlanManager({
     const handleDeletePlan = async (planId: number) => {
         if (
             !window.confirm(
-                'Delete this plan? All associated data will be permanently removed.'
+                'Delete this plan? All associated data will be permanently removed.',
             )
         ) {
             return;
@@ -105,7 +105,7 @@ export default function ProjectPlanManager({
                         Accept: 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
                     },
-                }
+                },
             );
 
             if (!response.ok) {
@@ -123,20 +123,20 @@ export default function ProjectPlanManager({
             alert(
                 error instanceof Error
                     ? error.message
-                    : 'Unable to delete the plan. Please try again.'
+                    : 'Unable to delete the plan. Please try again.',
             );
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-950 text-white px-6 py-10">
-            <div className="max-w-6xl mx-auto space-y-8">
+        <div className="min-h-screen bg-gray-950 px-6 py-10 text-white">
+            <div className="mx-auto max-w-6xl space-y-8">
                 <header className="flex flex-col gap-2">
-                    <p className="text-sm uppercase text-gray-500 tracking-wide">
+                    <p className="text-sm tracking-wide text-gray-500 uppercase">
                         Project
                     </p>
                     <h1 className="text-4xl font-bold">{project.name}</h1>
-                    <div className="text-gray-400 text-sm flex gap-6 flex-wrap">
+                    <div className="flex flex-wrap gap-6 text-sm text-gray-400">
                         <span>Owner: {project.owner}</span>
                         <span>Location: {project.location}</span>
                         <span>
@@ -145,13 +145,13 @@ export default function ProjectPlanManager({
                     </div>
                 </header>
 
-                <div className="flex flex-col md:flex-row gap-6">
-                    <div className="md:w-1/3 space-y-4">
-                        <div className="border border-gray-800 rounded-lg p-5 bg-gray-900">
-                            <h2 className="text-lg font-semibold mb-2">
+                <div className="flex flex-col gap-6 md:flex-row">
+                    <div className="space-y-4 md:w-1/3">
+                        <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+                            <h2 className="mb-2 text-lg font-semibold">
                                 Plan Slots
                             </h2>
-                            <p className="text-sm text-gray-400 mb-4">
+                            <p className="mb-4 text-sm text-gray-400">
                                 Create up to {maxPlans} distinct plans for this
                                 project. Each plan has its own upload and
                                 detailing flow.
@@ -159,10 +159,10 @@ export default function ProjectPlanManager({
                             <button
                                 onClick={handleCreatePlan}
                                 disabled={availableSlots <= 0 || isCreating}
-                                className={`w-full px-4 py-2 rounded text-sm font-semibold transition ${
+                                className={`w-full rounded px-4 py-2 text-sm font-semibold transition ${
                                     availableSlots <= 0 || isCreating
-                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-600 hover:bg-blue-500 text-white'
+                                        ? 'cursor-not-allowed bg-gray-700 text-gray-400'
+                                        : 'bg-blue-600 text-white hover:bg-blue-500'
                                 }`}
                             >
                                 {availableSlots <= 0
@@ -172,11 +172,11 @@ export default function ProjectPlanManager({
                                       : 'Add Plan'}
                             </button>
                         </div>
-                        <div className="border border-gray-800 rounded-lg p-5 bg-gray-900">
-                            <h3 className="text-base font-semibold mb-2">
+                        <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+                            <h3 className="mb-2 text-base font-semibold">
                                 How it works
                             </h3>
-                            <ol className="list-decimal text-sm space-y-1 text-gray-400 ml-4">
+                            <ol className="ml-4 list-decimal space-y-1 text-sm text-gray-400">
                                 <li>Create a plan slot.</li>
                                 <li>Upload a DWG file.</li>
                                 <li>Enter the detailing workspace.</li>
@@ -184,9 +184,9 @@ export default function ProjectPlanManager({
                         </div>
                     </div>
 
-                    <div className="md:flex-1 space-y-4">
+                    <div className="space-y-4 md:flex-1">
                         {plans.length === 0 && (
-                            <div className="border border-dashed border-gray-700 rounded-lg p-8 text-center text-gray-400">
+                            <div className="rounded-lg border border-dashed border-gray-700 p-8 text-center text-gray-400">
                                 No plans yet. Create one to get started.
                             </div>
                         )}
@@ -198,7 +198,7 @@ export default function ProjectPlanManager({
                             return (
                                 <div
                                     key={plan.id}
-                                    className="border border-gray-800 rounded-xl p-5 bg-gray-900 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                                    className="flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-900 p-5 md:flex-row md:items-center md:justify-between"
                                 >
                                     <div>
                                         <div className="flex items-center gap-3">
@@ -206,29 +206,29 @@ export default function ProjectPlanManager({
                                                 {plan.name}
                                             </h3>
                                             <span
-                                                className={`text-xs font-semibold px-2 py-1 rounded-full ${meta.badge}`}
+                                                className={`rounded-full px-2 py-1 text-xs font-semibold ${meta.badge}`}
                                             >
                                                 {meta.label}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-400 mt-1">
+                                        <p className="mt-1 text-sm text-gray-400">
                                             Slot #{plan.slot} ·{' '}
                                             {meta.description}
                                         </p>
                                         {plan.updated_at && (
-                                            <p className="text-xs text-gray-500 mt-2">
+                                            <p className="mt-2 text-xs text-gray-500">
                                                 Updated:{' '}
                                                 {new Date(
-                                                    plan.updated_at
+                                                    plan.updated_at,
                                                 ).toLocaleString()}
                                             </p>
                                         )}
                                     </div>
 
-                                    <div className="flex flex-col md:flex-row gap-2 md:items-center">
+                                    <div className="flex flex-col gap-2 md:flex-row md:items-center">
                                         <a
                                             href={`/projects/${project.id}/plans/${plan.id}`}
-                                            className={`px-4 py-2 rounded text-sm font-semibold text-center ${
+                                            className={`rounded px-4 py-2 text-center text-sm font-semibold ${
                                                 plan.svg_path
                                                     ? 'bg-green-600 hover:bg-green-500'
                                                     : 'bg-yellow-600 hover:bg-yellow-500'
@@ -242,7 +242,7 @@ export default function ProjectPlanManager({
                                             onClick={() =>
                                                 handleDeletePlan(plan.id)
                                             }
-                                            className="px-4 py-2 rounded text-sm font-semibold bg-red-700 hover:bg-red-600"
+                                            className="rounded bg-red-700 px-4 py-2 text-sm font-semibold hover:bg-red-600"
                                         >
                                             Delete
                                         </button>
@@ -253,7 +253,7 @@ export default function ProjectPlanManager({
                     </div>
                 </div>
             </div>
+            <div className="absolute -bottom-[25%] h-[300px] w-full bg-blue-800 opacity-20 blur-[50px]"></div>
         </div>
     );
 }
-

@@ -193,3 +193,14 @@ button:hover {
     filter: brightness(0.9);
     color: black;
 }
+
+.plan-manager .plan-preview svg {
+    position: relative;
+    transform: translateX(12%);
+}
+
+@media (max-width: 640px) {
+    .plan-manager .plan-preview svg {
+        transform: translateX(0%);
+    }
+}
