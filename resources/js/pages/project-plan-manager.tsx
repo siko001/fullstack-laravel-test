@@ -115,6 +115,7 @@ export default function ProjectPlanManager({
 
             if (typeof window !== 'undefined') {
                 localStorage.removeItem(`lineGroups:${planId}`);
+                localStorage.removeItem(`metadataOptions:${planId}`);
             }
             window.location.reload();
         } catch (error) {
