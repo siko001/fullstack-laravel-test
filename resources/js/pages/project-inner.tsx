@@ -7,12 +7,14 @@ import SVGMetadataParser, { SVGMetadataParserRef } from '@/components/svg-metada
 export default function ProjectInner({ project, url }: { project: any, url: string }) {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // SVG metadata parser ref
   const metadataParserRef = useRef<SVGMetadataParserRef>(null);
   
   // Handle metadata changes
   const handleMetadataChange = (metadata: any, textElements: any, rooms: any) => {
     console.log('SVG Metadata parsed:', { metadata, textElements, rooms });
-    // Use Data for rooms
+    // You can use this data for select fields when creating rooms
   };
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
