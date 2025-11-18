@@ -68,36 +68,126 @@ export default function ProjectInner({ project, url }: { project: any, url: stri
   const [tooltipText, setTooltipText] = useState<string | null>(null);
   const [selectedToolTip, setSelectedTooltipText] = useState<string | null>(null);
   
+  // Helper functions to find group/room information for a line
+  const findLineGroups = (lineId: string) => {
+    const lineGroups = [];
+    const lineRooms = [];
+    
+    Object.entries(groups).forEach(([groupId, group]) => {
+      if (group.lines.includes(lineId)) {
+        if (group.type === 'room') {
+          lineRooms.push({ id: groupId, name: group.name, group });
+        } else {
+          lineGroups.push({ id: groupId, name: group.name, group });
+        }
+      }
+    });
+    
+    return { groups: lineGroups, rooms: lineRooms };
+  };
+  
+  const getAvailableGroups = (lineId: string) => {
+    return Object.entries(groups)
+      .filter(([id, group]) => 
+        group.type !== 'room' && !group.lines.includes(lineId)
+      )
+      .map(([id, group]) => ({ id, name: group.name, group }));
+  };
+  
+  const getAvailableRooms = (lineId: string) => {
+    return Object.entries(groups)
+      .filter(([id, group]) => 
+        group.type === 'room' && !group.lines.includes(lineId)
+      )
+      .map(([id, group]) => ({ id, name: group.name, group }));
+  };
+  
+  const addLineToGroup = (lineId: string, groupId: string) => {
+    const updatedGroups = { ...groups };
+    if (updatedGroups[groupId]) {
+      updatedGroups[groupId] = {
+        ...updatedGroups[groupId],
+        lines: [...new Set([...updatedGroups[groupId].lines, lineId])]
+      };
+      setGroups(updatedGroups);
+      localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+      
+      // Update visual styling
+      const line = document?.getElementById(lineId)?.nextSibling;
+      if (line) {
+        line.style.stroke = 'blue';
+        line.style.strokeWidth = '12px';
+      }
+    }
+  };
+  
+  const removeLineFromGroup = (lineId: string, groupId: string) => {
+    const updatedGroups = { ...groups };
+    if (updatedGroups[groupId]) {
+      updatedGroups[groupId] = {
+        ...updatedGroups[groupId],
+        lines: updatedGroups[groupId].lines.filter(id => id !== lineId)
+      };
+      
+      // Remove group if empty
+      if (updatedGroups[groupId].lines.length === 0) {
+        delete updatedGroups[groupId];
+        if (selectedGroup === groupId) {
+          setSelectedGroup(null);
+        }
+      }
+      
+      setGroups(updatedGroups);
+      localStorage.setItem('lineGroups', JSON.stringify(updatedGroups));
+      
+      // Update visual styling
+      const line = document?.getElementById(lineId)?.nextSibling;
+      if (line) {
+        const { groups: remainingGroups, rooms: remainingRooms } = findLineGroups(lineId);
+        if (remainingGroups.length === 0 && remainingRooms.length === 0) {
+          line.style.stroke = 'black';
+          line.style.strokeWidth = '8px';
+        }
+      }
+    }
+  };
+  
+ 
+  
   
   
     const svgContainerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const persistantTooltipRef = useRef<HTMLDivElement>(null);
+    
+  const handleClosePersistantModal = () => {
+    if (persistantTooltipRef.current) {
+      persistantTooltipRef.current.style.display = 'none';
+    }
+  }
+  
 
   const selectLine = (id: string) => {
     if (!id) return;
-    
     setSelectedId(id);
     setSelectedTooltipText(id);
     
     // Toggle line selection for multi-selection
     setSelectedLines(prev => {
-      console.log('Current selectedLines before toggle:', prev);
-      console.log('Toggling line:', id);
-      
       if (prev.includes(id)) {
         const newSelection = prev.filter(lineId => lineId !== id);
-        console.log('Deselecting line, new selection:', newSelection);
+        handleClosePersistantModal()
         return newSelection;
       } else {
         const newSelection = [...prev, id];
-        console.log('Selecting line, new selection:', newSelection);
+        console.log('select', newSelection)
         return newSelection;
       }
     });
     
+    // Position tooltip in center of screen
     if (persistantTooltipRef.current) {
-        persistantTooltipRef.current.style.display = 'inline-block';
+      persistantTooltipRef.current.style.display = 'block';
         persistantTooltipRef.current.style.position = 'fixed';
         persistantTooltipRef.current.style.left = `${event.clientX + 15}px`;
         persistantTooltipRef.current.style.top = `${event.clientY + 15}px`;
@@ -385,8 +475,7 @@ Please enter the following:
 
 
 
-  
-  
+
   
   return (
     <div>
@@ -459,8 +548,129 @@ Please enter the following:
         {tooltipText}
       </div >
       
-      <div ref={persistantTooltipRef} className='persistant-tooltip hover-tooltip' >
-        {selectedToolTip}
+      <div ref={persistantTooltipRef} className='persistant-tooltip z-[9999] bg-white border border-gray-300 rounded-lg shadow-lg p-3 max-w-xs' style={{ display: 'none', position: 'fixed', pointerEvents: 'auto' }} >
+        {selectedToolTip && (
+          <div className="space-y-2">
+            <div className="font-semibold flex justify-between gap-12 text-black text-sm border-b pb-1">
+            <p>  Line: {selectedToolTip}</p> 
+            </div>
+            
+            {/* Show current groups and rooms */}
+            {(() => {
+              const { groups: lineGroups, rooms: lineRooms } = findLineGroups(selectedToolTip);
+              
+              return (
+                <div className="space-y-1">
+                  {lineGroups.length > 0 && (
+                    <div className="relative ">
+                      <div className="text-xs font-semibold text-blue-600">Groups:</div>
+                      {lineGroups.map(({ id, name }) => (
+                        <div key={id} className="flex justify-between items-center text-xs py-1">
+                          <span className="text-blue-700">{name}</span>
+                          <button
+                            onClick={() => removeLineFromGroup(selectedToolTip, id)}
+                            className="text-red-500 cursor-pointer  hover:text-red-700 px-1 text-xs"
+                            title="Remove from group"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {lineRooms.length > 0 && (
+                    <div>
+                      <div className="text-xs font-semibold text-purple-600">Rooms:</div>
+                      {lineRooms.map(({ id, name }) => (
+                        <div key={id} className="flex justify-between items-center text-xs py-1">
+                          <span className="text-purple-700">{name}</span>
+                          <button
+                            onClick={() => removeLineFromGroup(selectedToolTip, id)}
+                            className="text-red-500 hover:text-red-700 px-1 text-xs"
+                            title="Remove from room"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {lineGroups.length === 0 && lineRooms.length === 0 && (
+                    <div className="text-xs text-gray-500 italic">
+                      Not in any group or room
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            
+            {/* Add to options */}
+            <div className="border-t pt-2 space-y-1">
+              {(() => {
+                const availableGroups = getAvailableGroups(selectedToolTip);
+                const availableRooms = getAvailableRooms(selectedToolTip);
+                
+                return (
+                  <>
+                    {availableGroups.length > 0 && (
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">Add to Group:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {availableGroups.slice(0, 3).map(({ id, name }) => (
+                            <button
+                              key={id}
+                              onClick={() => addLineToGroup(selectedToolTip, id)}
+                              className="text-xs bg-blue-100 hover:bg-blue-200 cursor-pointer text-blue-700 px-2 py-1 rounded"
+                              title={`Add to ${name}`}
+                            >
+                              +{name}
+                            </button>
+                          ))}
+                          {availableGroups.length > 3 && (
+                            <span className="text-xs text-gray-500 px-2 py-1">
+                              +{availableGroups.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {availableRooms.length > 0 && (
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">Add to Room:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {availableRooms.slice(0, 3).map(({ id, name }) => (
+                            <button
+                              key={id}
+                              onClick={() => addLineToGroup(selectedToolTip, id)}
+                              className="text-xs bg-purple-100 hover:bg-purple-200 cursor-pointer text-purple-700 px-2 py-1 rounded"
+                              title={`Add to ${name}`}
+                            >
+                              +{name}
+                            </button>
+                          ))}
+                          {availableRooms.length > 3 && (
+                            <span className="text-xs text-gray-500 px-2 py-1">
+                              +{availableRooms.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {availableGroups.length === 0 && availableRooms.length === 0 && (
+                      <div className="text-xs text-gray-500 italic">
+                        No available groups or rooms
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
       </div>
     
      {tooltipMode !== 'room' &&
