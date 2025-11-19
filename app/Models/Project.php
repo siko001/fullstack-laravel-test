@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
-    //
     protected $fillable = [
         'name',
         'owner',
@@ -14,10 +14,10 @@ class Project extends Model
         'postcode',
         'project_type',
         'address',
-        'svg_path',
     ];
-    
-    
-    
-    
+
+    public function plans(): HasMany
+    {
+        return $this->hasMany(ProjectPlan::class);
+    }
 }

@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -142,38 +142,30 @@
     }
 }
 
-
-
-
-svg{
+svg {
     margin-left: auto;
     margin-right: auto;
     display: block;
     padding: 2rem;
 }
 
- svg g line {
-  pointer-events: visiblePainted;
-  stroke-width: 20px;
-
+svg g line {
+    pointer-events: visiblePainted;
+    stroke-width: 20px;
 }
-
-
 
 body.show-hit-areas .hit-area {
     opacity: 0.3;
     pointer-events: all;
-    cursor: pointer;    
+    cursor: pointer;
 }
 
 body.show-hit-areas .hit-area line,
 body.show-hit-areas .hit-area path {
-    stroke: rgba(0, 0, 255, 0.3) ;
-    stroke-width: 10px ;
-    vector-effect: non-scaling-stroke ;
-
+    stroke: rgba(0, 0, 255, 0.3);
+    stroke-width: 10px;
+    vector-effect: non-scaling-stroke;
 }
-
 
 .hover-tooltip {
     position: fixed;
@@ -187,5 +179,30 @@ body.show-hit-areas .hit-area path {
     display: none;
     z-index: 9999;
     max-width: 200px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+button {
+    transition:
+        background-color 0.2s,
+        color 0.2s;
+}
+
+button:hover {
+    cursor: pointer;
+    filter: brightness(0.9);
+    color: black;
+}
+
+.plan-manager .plan-preview svg {
+    position: relative;
+    transform: translateX(12%);
+    top: 1rem;
+    scale: 120%;
+}
+
+@media (max-width: 640px) {
+    .plan-manager .plan-preview svg {
+        transform: translateX(0%);
+    }
 }
